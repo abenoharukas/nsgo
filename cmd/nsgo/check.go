@@ -248,13 +248,13 @@ func checkTargets(ctx context.Context, p *project, target string, jobs int) erro
 		failures = append(failures, err)
 	}
 	// A run that vetted nothing says so: a build constraint that excludes every requested target fails rather than passing silently.
-	vetted := 0
+	vettedCount := 0
 	for _, o := range outcomes {
 		if o.err == nil && o.why == "" {
-			vetted++
+			vettedCount++
 		}
 	}
-	if vetted == 0 && len(failures) == 0 {
+	if vettedCount == 0 && len(failures) == 0 {
 		var empty []string
 		for i, o := range outcomes {
 			if o.empty {

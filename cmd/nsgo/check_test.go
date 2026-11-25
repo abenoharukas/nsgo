@@ -272,7 +272,7 @@ func TestCheckTargetSkipsRealBuildConstraints(t *testing.T) {
 	})
 	var err error
 	out := captureStderr(t, func() { err = check(t.Context(), p, "linux,web", 0) })
-	if err != nil || !strings.Contains(out, "vetted for linux_arm64") || !strings.Contains(out, "skipped web: no packages match ./...") {
+	if err != nil || !strings.Contains(out, "vetted for linux_arm64") || !strings.Contains(out, "skipped web: no packages build for it") {
 		t.Fatalf("check did not vet the Linux-only package and skip web: %v\n%s", err, out)
 	}
 }
