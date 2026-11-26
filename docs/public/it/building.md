@@ -114,6 +114,8 @@ build:
 # miniprogram: { appid: { wechat: wx0123456789abcdef, alipay: "2021000000000000" }, custom_navigation: false }  # the mini programs'
 ```
 
+Una chiave che `nsgo.yaml` non conosce, a qualsiasi livello, fa fallire ogni comando che legge il file, indicandone la riga, la sezione e la chiave nota più vicina: `nsgo.yaml:12: android has no key permisions; did you mean permissions?`. Le chiavi di `apple.info` e `macos.entitlements` finiscono nei plist così come sono scritte, quindi la loro ortografia non viene controllata.
+
 Un semplice nome del sistema operativo in `targets` — o in `nsgo build -target` e `nsgo check -target` — indica le sue architetture (`windows` equivale a `windows_arm64` e `windows_x64`; `android` è solo `android_arm64`, poiché la build x86_64 richiede un NDK). `macos_universal`, che `macos` e `all` tralasciano, compila entrambe le architetture macOS e le unisce in un'unica app, incluse le sue librerie e i suoi widget. Il canale Steam usa il bundle universale dell'app. Le build con installer lo racchiudono in un'unica immagine disco, con un solo feed Sparkle sul canale diretto. `nsgo test -target` accetta anche il nome dell'architettura per cui vengono eseguiti i suoi test: quella della macchina corrente per un sistema operativo desktop e `arm64` per Android, quindi `windows_x64` esegue il target `windows` su una macchina Windows x64, mentre un'architettura per cui il target non può essere eseguito viene rifiutata indicando il nome da usare.
 
 I flag sostituiscono i valori che nominano, come `-target`, `-version` o `-output`; `-h` li elenca tutti.

@@ -114,6 +114,8 @@ build:
 # miniprogram: { appid: { wechat: wx0123456789abcdef, alipay: "2021000000000000" }, custom_navigation: false }  # the mini programs'
 ```
 
+Kunci yang tidak dikenal `nsgo.yaml`, di tingkat mana pun, membuat setiap perintah yang membaca berkas itu gagal, dengan menyebut barisnya, bagiannya, dan kunci terdekat yang dikenal: `nsgo.yaml:12: android has no key permisions; did you mean permissions?`. Kunci di `apple.info` dan `macos.entitlements` masuk ke plist apa adanya, jadi ejaannya tidak diperiksa.
+
 Nama OS tanpa arsitektur pada `targets` — atau di `nsgo build -target` dan `nsgo check -target` — berarti mencakup semua arsitekturnya (`windows` berarti `windows_arm64` dan `windows_x64`; `android` hanya `android_arm64`, karena build x86_64 membutuhkan NDK). `macos_universal`, yang tidak disertakan oleh `macos` dan `all`, membangun kedua arsitektur macOS lalu menggabungkannya menjadi satu aplikasi, termasuk pustaka dan widget-nya. Saluran Steam menggunakan bundel aplikasi universal tersebut. Build penginstal membungkusnya dalam satu disk image, dengan satu umpan Sparkle pada saluran langsung (*direct*). `nsgo test -target` juga menerima nama arsitektur tempat pengujiannya berjalan: untuk OS desktop pada arsitektur mesin ini dan Android pada `arm64`, sehingga `windows_x64` menjalankan target `windows` di mesin Windows x64, sedangkan arsitektur yang tidak didukung target tersebut akan ditolak dengan pesan berisi nama yang harus digunakan.
 
 Flag menggantikan nilai yang dinamainya, seperti `-target`, `-version`, atau `-output`; `-h` mencantumkan semuanya.

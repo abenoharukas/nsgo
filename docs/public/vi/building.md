@@ -114,6 +114,8 @@ build:
 # miniprogram: { appid: { wechat: wx0123456789abcdef, alipay: "2021000000000000" }, custom_navigation: false }  # the mini programs'
 ```
 
+Một khóa mà `nsgo.yaml` không biết, ở bất kỳ cấp nào, khiến mọi lệnh đọc tệp này thất bại, kèm theo dòng, mục chứa nó và khóa đã biết gần nhất: `nsgo.yaml:12: android has no key permisions; did you mean permissions?`. Các khóa trong `apple.info` và `macos.entitlements` được ghi nguyên văn vào plist, nên chính tả của chúng không được kiểm tra.
+
 Một tên hệ điều hành trần trong `targets` — hoặc trong `nsgo build -target` và `nsgo check -target` — đại diện cho các kiến trúc của nó (`windows` là `windows_arm64` và `windows_x64`; `android` chỉ gồm `android_arm64`, vì bản dựng x86_64 cần có NDK). `macos_universal` (vốn không nằm trong `macos` và `all`) xây dựng cả hai kiến trúc macOS và gộp vào một ứng dụng duy nhất, bao gồm cả các thư viện và tiện ích mở rộng của nó. Kênh Steam sử dụng gói ứng dụng hợp nhất (universal) này. Các bản dựng trình cài đặt gói nó vào một ảnh đĩa duy nhất, kèm một nguồn cấp Sparkle duy nhất trên kênh phát hành trực tiếp. `nsgo test -target` cũng nhận tên kiến trúc mà bài kiểm thử chạy: với hệ điều hành máy tính để bàn thì theo kiến trúc của máy hiện tại, còn với Android thì trên `arm64`, chẳng hạn `windows_x64` chạy đích `windows` trên máy Windows x64, trong khi một kiến trúc không phù hợp sẽ bị từ chối kèm gợi ý tên đúng cần dùng.
 
 Các cờ dòng lệnh sẽ thay thế các giá trị cùng tên, chẳng hạn `-target`, `-version` hoặc `-output`; `-h` liệt kê tất cả.

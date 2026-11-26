@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"reflect"
 	"runtime"
 	"slices"
 	"strconv"
@@ -132,10 +133,12 @@ type project struct {
 	// Capabilities are what a TSX app's code may reach once signed into a
 	// package (nsgo publish), and under nsgo dev -limits.
 	Capabilities yaml.Node `yaml:"capabilities"`
-	// StatusBar is a TSX app's default status bar on iOS and Android,
-	// under its pages' and dialogs': foreground (auto, light or dark) and
-	// hidden.
-	StatusBar yaml.Node `yaml:"status_bar"`
+	// StatusBar is a TSX app's default status bar on iOS and Android, under its pages' and dialogs': foreground (auto, light or dark), hidden and immersive. tsx/bundler reads it (setupScript); its fields here are the keys the bundler decodes, so that load refuses any other.
+	StatusBar struct {
+		Foreground string `yaml:"foreground"`
+		Hidden     *bool  `yaml:"hidden"`
+		Immersive  *bool  `yaml:"immersive"`
+	} `yaml:"status_bar"`
 	// I18n is the app's catalogs: Dir, relative to nsgo.yaml, holds a
 	// YAML file per language, Source's with every message. Their
 	// languages are the ones the app shows.
@@ -438,8 +441,15 @@ func load(dir string) (*project, error) {
 	if err != nil {
 		return nil, err
 	}
+	var doc yaml.Node
+	if err := yaml.Unmarshal(data, &doc); err != nil {
+		return nil, fmt.Errorf("nsgo.yaml: %w", err)
+	}
+	if err := checkKeys("nsgo.yaml", &doc, reflect.TypeFor[project]()); err != nil {
+		return nil, err
+	}
 	p := &project{Dir: abs}
-	if err := yaml.Unmarshal(data, p); err != nil {
+	if err := doc.Decode(p); err != nil {
 		return nil, fmt.Errorf("nsgo.yaml: %w", err)
 	}
 	if p.Name == "" {
