@@ -61,3 +61,24 @@ func init() {
 ```
 
 Khi đó `import { Toggle } from "example.com/chips"` sẽ nhận các trường cấu trúc dưới dạng props ([Ứng dụng TSX](../tsx.md#go-từ-tsx)).
+
+## nsgo-module.yaml
+
+Một thư viện cho các ứng dụng thêm nó biết những điều cần biết qua `nsgo-module.yaml`, một tệp tùy chọn đặt cạnh `go.mod` ở gốc module, mà [`nsgo add`](../building.md#thêm-thư-viện) hiển thị trong kế hoạch trước khi ghi bất cứ thứ gì:
+
+```yaml
+version: 1
+import: [player]            # các gói mà ứng dụng import, tương đối với gốc module; . là gốc
+targets: [macos, windows_x64, linux_x64, ios, ios_simulator]
+notes: |
+  Các thư viện của FFmpeg dùng giấy phép LGPL 2.1: hãy cung cấp mã nguồn của chúng bên cạnh bản tải xuống của bạn, ghi công FFmpeg và cho phép thay thế chúng.
+components:                 # các gói mà module cung cấp để sao chép
+  chat: ui/chat
+```
+
+- `import` liệt kê các gói mà ứng dụng import, mỗi gói là một gói của chính module này, không thuộc module lồng bên trong nó, và không phải gói `main`. Kế hoạch in một dòng import cho mỗi gói; khi không có trường này, hoặc không có tệp, nó in dòng của gói gốc.
+- `targets` nhận tên và nhóm target như `build.targets`. Kế hoạch nêu các target của ứng dụng mà danh sách không có, và `nsgo check -target` cảnh báo về mỗi module mà ứng dụng liên kết có danh sách thiếu target đang được kiểm tra. Khi không có trường này, cả hai đều không nói gì về module đó.
+- `notes`, văn bản thuần tối đa 4 KiB, không có ký tự điều khiển hay ký tự định dạng nào ngoài dấu xuống dòng, kết thúc kế hoạch dưới dòng `From <module>, the author's notes:`, mỗi dòng được đánh dấu `|`: đây là nơi ghi những gì ứng dụng phải làm, chẳng hạn nghĩa vụ của một giấy phép.
+- `components` ánh xạ các tên gồm 1 đến 64 chữ cái ASCII thường, chữ số và dấu gạch nối, không bắt đầu hay kết thúc bằng dấu gạch nối, tới các thư mục gói bên dưới gốc module. Mỗi thư mục chứa một gói của module này không phải gói `main`, và kết thúc bằng tên gói của nó. Kế hoạch liệt kê mỗi thành phần cùng `nsgo add <module>#<name>`; nsgo chưa sao chép thành phần và hiện từ chối lệnh đó.
+
+Tệp này nghiêm ngặt: một tài liệu YAML duy nhất tối đa 1 MiB, phiên bản 1, không có anchor, alias hay trường mà nsgo không biết, và `nsgo add` từ chối module có tệp mà nó không chấp nhận được, dù có `-y` hay không. Các trường mới được thêm trong phiên bản 1, nên module dùng một trường mới phải yêu cầu NSGo đọc được nó, và nsgo cũ hơn sẽ nêu lệnh `go get github.com/nsgo-dev/nsgo@<phiên bản>` để có NSGo đó. `nsgo build` không bao giờ đọc tệp này.

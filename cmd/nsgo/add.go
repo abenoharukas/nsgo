@@ -50,7 +50,10 @@ func parseAddRequests(args []string) ([]addRequest, error) {
 			return nil, fmt.Errorf("add: flags go before the modules: %s add %s %s", nsgoCommand(), arg, args[0])
 		}
 		path, version, name, ok := parseModuleTemplate(arg)
-		if !ok || name != "" || strings.Contains(arg, "#") {
+		if ok && name != "" {
+			return nil, fmt.Errorf("add: %s names a component, which this nsgo cannot copy yet", arg)
+		}
+		if !ok || strings.Contains(arg, "#") {
 			return nil, fmt.Errorf("add: %q is not a module path with an optional @version", arg)
 		}
 		if err := module.CheckPath(path); err != nil {
@@ -126,8 +129,8 @@ func addModules(ctx context.Context, o addOptions, args []string, out io.Writer,
 		detail("next: go mod vendor")
 	}
 	for _, item := range p.items {
-		if item.importable() {
-			detail("next: import %q", item.path)
+		for _, line := range item.importLines() {
+			detail("next: %s", line)
 		}
 	}
 	return nil
@@ -266,6 +269,7 @@ type goListModule struct {
 	Retracted     []string
 	Deprecated    string
 	Error         *struct{ Err string }
+	Dir           string // where the module's files are, the module cache's copy or a directory that replaces it
 }
 
 // listModules runs go list -m -e -json on paths with flags, and returns what it printed of each path.
@@ -311,6 +315,7 @@ type addPlan struct {
 	oldMod, newMod, oldSum, newSum []byte
 	hadSum, hasSum                 bool
 	before, after                  *modfile.File
+	appTargets                     []string // the app's build.targets, read when a module lists its own
 }
 
 // addItem is a request as planned: the version it takes, the one the module had selected before, and what go list says of it.
@@ -319,6 +324,8 @@ type addItem struct {
 	selected, initial string
 	listed            goListModule
 	packageName       string
+	manifest          *moduleManifest // its nsgo-module.yaml, nil without one or when manifestErr says why it is refused
+	manifestErr       error
 }
 
 // importable reports whether the item's module has a root package an app imports.
@@ -439,6 +446,12 @@ func (m *addModule) plan(ctx context.Context, reqs []addRequest) (*addPlan, erro
 		}
 		p.items = append(p.items, item)
 	}
+	// A plan that changes nothing prints only the versions go.mod has, so it reads no module's nsgo-module.yaml.
+	if p.changes() {
+		if err := p.readManifests(ctx, flags); err != nil {
+			return nil, fmt.Errorf("add: %w", err)
+		}
+	}
 	return p, nil
 }
 
@@ -469,6 +482,9 @@ func (p *addPlan) refusal() error {
 			}
 			reasons = append(reasons, reason)
 			continue
+		}
+		if item.manifestErr != nil {
+			reasons = append(reasons, item.manifestErr.Error())
 		}
 		if item.initial != "" && semver.Compare(item.selected, item.initial) < 0 && !(item.typed && item.version == item.selected) {
 			reasons = append(reasons, fmt.Sprintf("%s@%s is %s, below the %s this module has: %s add %s@%s lowers it on purpose", item.path, item.version, item.selected, item.initial, nsgoCommand(), item.path, item.selected))
@@ -577,9 +593,9 @@ func (p *addPlan) write(w io.Writer) error {
 		if r := item.listed.Replace; r != nil {
 			row("replaced", "go.mod replaces it with "+strings.TrimSpace(r.Path+" "+r.Version)+", which builds use instead")
 		}
-		if item.importable() {
-			row("next", fmt.Sprintf("import %q", item.path))
-		}
+		rows("targets", p.lackedTargets(item))
+		rows("components", item.componentCommands())
+		rows("next", item.importLines())
 		b.WriteString("\n")
 	}
 	fmt.Fprintf(&b, "%s\n", p.before.Module.Mod.Path)
@@ -600,6 +616,7 @@ func (p *addPlan) write(w io.Writer) error {
 	if p.m.vendored() {
 		row("next", "go mod vendor")
 	}
+	p.writeNotes(&b)
 	_, err := w.Write(b.Bytes())
 	return err
 }

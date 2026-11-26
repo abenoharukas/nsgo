@@ -224,6 +224,8 @@ Planlama, `go.mod` ve `go.sum` kopyaları üzerinde go komutundan başka hiçbir
 
 `go.mod` ve `go.sum` dosyalarını yalnızca planlamadan bu yana ikisi de değişmediyse, her birini üzerine yeniden adlandırılan geçici bir dosya aracılığıyla yazar; bir hata ya da kesinti olursa ikisini de eski hâline getirir. `vendor` dizini olan bir modülde plan, sonraki adım olarak `go mod vendor` komutunu gösterir.
 
+Bir modülün [`nsgo-module.yaml`](authoring/shipping.md#nsgo-moduleyaml) dosyası varsa, plandaki bloğu dosyanın listelediği import satırlarını, uygulamanın `build.targets` hedeflerinden modülde olmayanları ve kopyalanmak üzere sunduğu bileşenleri gösterir; yazarının notları da her satırı `|` ile işaretlenmiş olarak planı bitirir. `add`, dosyasını kabul edemediği bir modülü `-y` olsa da olmasa da reddeder.
+
 `add`, NSGo 0.3.4'ten sonra geldi. 0.3.4'ü ya da daha eski bir sürümü sabitleyen bir modülde kurulu `nsgo`, bu komut için modülün `nsgo`'sunu çalıştırmaz; `add`'i getiren `go get github.com/nsgo-dev/nsgo@<sürüm>` komutunu yazdırır. Orada `go tool nsgo add`, `add`'i bilmeyen sabitlenmiş `nsgo`'yu çalıştırır.
 
 ## Go paketlerinden kütüphaneler

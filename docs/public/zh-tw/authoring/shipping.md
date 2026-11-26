@@ -61,3 +61,24 @@ func init() {
 ```
 
 之後透過 `import { Toggle } from "example.com/chips"` 即可將元件欄位作為 props 使用（[TSX 應用程式](../tsx.md#在-tsx-中使用-go)）。
+
+## nsgo-module.yaml
+
+函式庫透過模組根目錄下、`go.mod` 旁邊的選用檔案 `nsgo-module.yaml`，告訴新增它的應用程式需要知道的事；[`nsgo add`](../building.md#新增函式庫) 在寫入任何東西之前，會在計畫中顯示它：
+
+```yaml
+version: 1
+import: [player]            # 應用程式匯入的套件，相對於模組根目錄；. 即根目錄
+targets: [macos, windows_x64, linux_x64, ios, ios_simulator]
+notes: |
+  FFmpeg 的函式庫採用 LGPL 2.1：請在你的下載旁提供它們的原始碼，註明 FFmpeg，並允許替換它們。
+components:                 # 模組提供給應用程式複製的套件
+  chat: ui/chat
+```
+
+- `import` 列出應用程式匯入的套件，每個都是這個模組自己的套件，既不屬於巢狀於其中的模組，也不是 `main` 套件。計畫為每個套件印出一行 import；沒有這個欄位或沒有這個檔案時，印出根套件的 import 行。
+- `targets` 接受目標名稱與目標群組，寫法與 `build.targets` 相同。計畫會列出應用程式的目標中這份清單沒有的那些；應用程式連結的模組的清單裡沒有 `nsgo check -target` 所檢查的目標時，它會發出警告。沒有這個欄位時，兩者都不就這個模組說什麼。
+- `notes` 是至多 4 KiB 的純文字，除換行外不含控制字元或格式字元。它位於計畫的最後，在 `From <module>, the author's notes:` 之下，每行以 `|` 標示：應用程式要承擔的義務，例如授權條款的要求，就寫在這裡。
+- `components` 把名稱對應到模組根目錄之下的套件目錄；名稱由 1 到 64 個小寫 ASCII 字母、數字和連字號組成，首尾不能是連字號。每個目錄都是這個模組的套件，不是 `main` 套件，且目錄的最後一段就是它的套件名稱。計畫為每個元件列出 `nsgo add <module>#<name>`；nsgo 還不能複製元件，目前會拒絕這個指令。
+
+這個檔案是嚴格的：只能有一個 YAML 文件，至多 1 MiB，版本為 1，不允許錨點、別名或 nsgo 不認識的欄位；檔案無法通過檢查的模組，`nsgo add` 一律拒絕，無論是否給出 `-y`。新欄位加在版本 1 之內，因此用到新欄位的模組要依賴能讀取它的 NSGo，較舊的 nsgo 會給出引入該 NSGo 的 `go get github.com/nsgo-dev/nsgo@<版本>`。`nsgo build` 從不讀取這個檔案。

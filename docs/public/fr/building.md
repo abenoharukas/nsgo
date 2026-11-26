@@ -224,6 +224,8 @@ Avec ou sans `-y`, `add` refuse :
 
 Il n'écrit `go.mod` et `go.sum` que si aucun des deux n'a changé depuis la planification, chacun par un fichier temporaire renommé par-dessus, et les rétablit tous deux en cas d'erreur ou d'interruption. Dans un module doté d'un répertoire `vendor`, le plan indique `go mod vendor` comme étape suivante.
 
+Lorsqu'un module a un [`nsgo-module.yaml`](authoring/shipping.md#nsgo-moduleyaml), son bloc dans le plan nomme les lignes d'import que le fichier liste, les cibles du `build.targets` de l'application qui manquent au module et les composants qu'il propose de copier, et les notes de son auteur terminent le plan, chaque ligne marquée `|`. `add` refuse un module dont il ne peut accepter le fichier, avec ou sans `-y`.
+
 `add` est apparu après NSGo 0.3.4. Dans un module qui fixe la 0.3.4 ou une version antérieure, un `nsgo` installé n'exécute pas pour lui le `nsgo` du module mais affiche le `go get github.com/nsgo-dev/nsgo@<version>` qui apporte `add` ; là, `go tool nsgo add` exécute le `nsgo` fixé, qui ne connaît pas `add`.
 
 ## Bibliothèques issues de paquets Go

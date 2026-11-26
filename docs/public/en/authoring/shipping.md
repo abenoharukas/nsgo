@@ -61,3 +61,24 @@ func init() {
 ```
 
 `import { Toggle } from "example.com/chips"` then takes the fields as props ([TSX apps](../tsx.md#go-from-tsx)).
+
+## nsgo-module.yaml
+
+A library tells the apps that add it what they need to know in `nsgo-module.yaml`, an optional file beside its `go.mod` at the module root, which [`nsgo add`](../building.md#adding-libraries) shows in its plan before writing anything:
+
+```yaml
+version: 1
+import: [player]            # packages apps import, relative to the module root; . is the root
+targets: [macos, windows_x64, linux_x64, ios, ios_simulator]
+notes: |
+  FFmpeg's libraries are LGPL 2.1: offer their source beside your downloads, credit FFmpeg and allow replacing them.
+components:                 # packages the module offers for copying
+  chat: ui/chat
+```
+
+- `import` names the packages apps import, each a package of this module, not of a module nested in it, and not a `main` package. The plan prints an import line for each; without the field, or the file, it prints the root package's.
+- `targets` takes target names and groups as `build.targets` does. The plan names the app's targets the list lacks, and `nsgo check -target` warns of each module the app links whose list lacks the target it vets. Without the field, neither says anything of the module.
+- `notes`, plain text of at most 4 KiB without control or format characters other than line breaks, end the plan under `From <module>, the author's notes:`, each line marked `|`: the place for what an app owes, such as a license's duties.
+- `components` maps names, 1 to 64 lower-case ASCII letters, digits and hyphens with no hyphen first or last, to package directories below the module root. Each directory holds a package of this module that is not a `main` package, and ends in its package's name. The plan lists each component with `nsgo add <module>#<name>`; nsgo does not copy components yet and refuses that command for now.
+
+The file is strict: one YAML document of at most 1 MiB, of version 1, without anchors, aliases or fields nsgo does not know, and `nsgo add` refuses a module whose file it cannot accept, `-y` or not. New fields join version 1, so a module that uses one requires the NSGo that reads it, and an older nsgo names the `go get github.com/nsgo-dev/nsgo@<version>` that brings it. `nsgo build` never reads the file.

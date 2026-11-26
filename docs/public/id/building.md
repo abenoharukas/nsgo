@@ -224,6 +224,8 @@ Dengan atau tanpa `-y`, `add` menolak:
 
 Ia menulis `go.mod` dan `go.sum` hanya jika keduanya tidak berubah sejak perencanaan, masing-masing melalui berkas sementara yang diganti namanya untuk menimpanya, dan mengembalikan keduanya bila terjadi galat atau interupsi. Pada modul yang memiliki direktori `vendor`, rencana menyebut `go mod vendor` sebagai langkah berikutnya.
 
+Bila sebuah modul memiliki [`nsgo-module.yaml`](authoring/shipping.md#nsgo-moduleyaml), bloknya dalam rencana menyebutkan baris import yang dicantumkan file itu, target dari `build.targets` aplikasi yang tidak dimiliki modul, dan komponen yang ditawarkannya untuk disalin, lalu catatan penulisnya menutup rencana, dengan setiap baris ditandai `|`. `add` menolak modul yang file-nya tidak dapat diterimanya, dengan atau tanpa `-y`.
+
 `add` baru ada setelah NSGo 0.3.4. Di modul yang menetapkan 0.3.4 atau rilis yang lebih lama, `nsgo` yang terpasang tidak menjalankan `nsgo` milik modul untuknya, melainkan mencetak `go get github.com/nsgo-dev/nsgo@<versi>` yang membawa `add`; di sana, `go tool nsgo add` menjalankan `nsgo` yang ditetapkan, yang tidak mengenal `add`.
 
 ## Pustaka dari paket Go

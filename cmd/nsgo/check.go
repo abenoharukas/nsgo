@@ -142,6 +142,8 @@ func checkTargets(ctx context.Context, p *project, target string, jobs int) erro
 		why string
 	}
 	outcomes := make([]outcome, len(names))
+	// The modules each target's build links whose nsgo-module.yaml lacks the target, warned of once every target is done.
+	linked := newLinkedManifests()
 	slots := make(chan struct{}, max(1, min(jobs, len(names))))
 	var wg sync.WaitGroup
 	for i, name := range names {
@@ -203,6 +205,9 @@ func checkTargets(ctx context.Context, p *project, target string, jobs int) erro
 					err = fmt.Errorf("dev client: %w", err)
 				}
 			}
+			if env != nil && p != nil {
+				linked.scan(ctx, p, env, i, name)
+			}
 			if err != nil {
 				s.fail()
 				outcomes[i].err = fmt.Errorf("%s: %w", name, err)
@@ -241,6 +246,7 @@ func checkTargets(ctx context.Context, p *project, target string, jobs int) erro
 	if len(skipped) > 0 {
 		warn("skipped %s: %s", strings.Join(skipped, ", "), why)
 	}
+	linked.warn(names)
 	if !vetted && len(failures) == 0 {
 		return errors.New("nothing was vetted: every requested target was skipped")
 	}

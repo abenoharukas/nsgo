@@ -61,3 +61,24 @@ func init() {
 ```
 
 이후 `import { Toggle } from "example.com/chips"`로 불러오면 구조체 필드를 props로 전달할 수 있습니다([TSX 앱](../tsx.md#tsx에서-go-호출하기)).
+
+## nsgo-module.yaml
+
+라이브러리는 모듈 루트의 `go.mod` 옆에 두는 선택 파일 `nsgo-module.yaml`로, 자신을 추가하는 앱이 알아야 할 것을 알립니다. [`nsgo add`](../building.md#라이브러리-추가)는 무엇이든 쓰기 전에 계획에서 이 내용을 보여 줍니다.
+
+```yaml
+version: 1
+import: [player]            # 앱이 임포트하는 패키지, 모듈 루트 기준 상대 경로이며 .은 루트
+targets: [macos, windows_x64, linux_x64, ios, ios_simulator]
+notes: |
+  FFmpeg 라이브러리는 LGPL 2.1입니다. 다운로드 옆에 소스를 제공하고, FFmpeg를 표기하고, 라이브러리 교체를 허용하세요.
+components:                 # 모듈이 복사용으로 제공하는 패키지
+  chat: ui/chat
+```
+
+- `import`는 앱이 임포트하는 패키지를 나열합니다. 각각은 이 모듈의 패키지여야 하며, 그 안에 중첩된 모듈의 패키지나 `main` 패키지는 안 됩니다. 계획은 각각에 대해 import 줄을 출력하고, 이 필드나 파일이 없으면 루트 패키지의 줄을 출력합니다.
+- `targets`는 `build.targets`처럼 타겟 이름과 그룹을 받습니다. 계획은 앱의 타겟 중 이 목록에 없는 것을 알려 주고, `nsgo check -target`은 앱이 링크하는 모듈의 목록에 검사 중인 타겟이 없으면 경고합니다. 이 필드가 없으면 둘 다 그 모듈에 대해 아무 말도 하지 않습니다.
+- `notes`는 줄바꿈 외의 제어 문자나 서식 문자가 없는 최대 4 KiB의 일반 텍스트입니다. 계획의 맨 끝, `From <module>, the author's notes:` 아래에 각 줄마다 `|` 표시를 달고 나옵니다. 라이선스 의무처럼 앱이 져야 할 일을 적는 곳입니다.
+- `components`는 1~64자의 소문자 ASCII 영문자, 숫자, 하이픈으로 되고 하이픈으로 시작하거나 끝나지 않는 이름을 모듈 루트 아래의 패키지 디렉터리에 대응시킵니다. 각 디렉터리는 이 모듈의 `main`이 아닌 패키지이고, 마지막 요소가 그 패키지 이름과 같습니다. 계획은 각 컴포넌트를 `nsgo add <module>#<name>`과 함께 나열합니다. nsgo는 아직 컴포넌트를 복사하지 못하며 당분간 이 명령을 거부합니다.
+
+이 파일은 엄격합니다. 최대 1 MiB의 YAML 문서 하나, 버전 1이어야 하며, 앵커와 별칭, nsgo가 모르는 필드는 허용되지 않습니다. `nsgo add`는 받아들일 수 없는 파일을 가진 모듈을 `-y` 여부와 관계없이 거부합니다. 새 필드는 버전 1 안에서 추가되므로, 새 필드를 쓰는 모듈은 그것을 읽는 NSGo를 요구하고, 더 오래된 nsgo는 그 NSGo를 가져오는 `go get github.com/nsgo-dev/nsgo@<버전>`을 알려 줍니다. `nsgo build`는 이 파일을 읽지 않습니다.

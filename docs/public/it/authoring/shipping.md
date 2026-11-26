@@ -61,3 +61,24 @@ func init() {
 ```
 
 `import { Toggle } from "example.com/chips"` accetta quindi i campi come prop ([App TSX](../tsx.md#go-da-tsx)).
+
+## nsgo-module.yaml
+
+Una libreria dice alle app che la aggiungono ciò che devono sapere in `nsgo-module.yaml`, un file facoltativo accanto al suo `go.mod` nella radice del modulo, che [`nsgo add`](../building.md#aggiungere-librerie) mostra nel suo piano prima di scrivere qualsiasi cosa:
+
+```yaml
+version: 1
+import: [player]            # pacchetti che le app importano, relativi alla radice del modulo; . è la radice
+targets: [macos, windows_x64, linux_x64, ios, ios_simulator]
+notes: |
+  Le librerie di FFmpeg sono LGPL 2.1: offri il loro sorgente accanto ai tuoi download, cita FFmpeg e consenti di sostituirle.
+components:                 # pacchetti che il modulo offre da copiare
+  chat: ui/chat
+```
+
+- `import` nomina i pacchetti che le app importano, ciascuno un pacchetto di questo modulo, non di un modulo annidato in esso, e non un pacchetto `main`. Il piano stampa una riga di import per ciascuno; senza il campo, o senza il file, stampa quella del pacchetto radice.
+- `targets` accetta nomi e gruppi di target come `build.targets`. Il piano nomina i target dell'app che mancano nell'elenco, e `nsgo check -target` avvisa di ogni modulo collegato dall'app il cui elenco non ha il target che controlla. Senza il campo, nessuno dei due dice nulla del modulo.
+- `notes`, testo semplice di al massimo 4 KiB senza caratteri di controllo o di formato diversi dagli a capo, chiude il piano sotto `From <module>, the author's notes:`, con ogni riga segnata da `|`: è il posto per ciò che un'app deve, come gli obblighi di una licenza.
+- `components` associa nomi di 1-64 lettere ASCII minuscole, cifre e trattini, senza trattino iniziale o finale, a directory di pacchetti sotto la radice del modulo. Ogni directory contiene un pacchetto di questo modulo che non è un pacchetto `main`, e termina con il nome del suo pacchetto. Il piano elenca ogni componente con `nsgo add <module>#<name>`; nsgo non copia ancora i componenti e per ora rifiuta quel comando.
+
+Il file è rigoroso: un solo documento YAML di al massimo 1 MiB, alla versione 1, senza ancore, alias o campi che nsgo non conosce, e `nsgo add` rifiuta un modulo il cui file non può accettare, con o senza `-y`. I nuovi campi si aggiungono alla versione 1, quindi un modulo che ne usa uno richiede l'NSGo che lo legge, e un nsgo più vecchio indica il `go get github.com/nsgo-dev/nsgo@<versione>` che porta quell'NSGo. `nsgo build` non legge mai il file.

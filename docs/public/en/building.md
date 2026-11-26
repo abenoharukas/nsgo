@@ -229,6 +229,8 @@ Whether or not `-y` is given, `add` refuses:
 
 It writes `go.mod` and `go.sum` only when neither has changed since planning, each through a temporary file renamed over it, and puts both back on an error or an interrupt. In a module with a `vendor` directory, the plan names `go mod vendor` as the next step.
 
+When a module has an [`nsgo-module.yaml`](authoring/shipping.md#nsgo-moduleyaml), its block in the plan names the import lines the file lists, the targets of the app's `build.targets` the module lacks and the components it offers for copying, and its author's notes end the plan, each line marked `|`. `add` refuses a module whose file it cannot accept, `-y` or not.
+
 `add` is new after NSGo 0.3.4. In a module that pins 0.3.4 or an earlier release, an installed `nsgo` does not run [the module's nsgo](#the-modules-nsgo) for it but prints the `go get github.com/nsgo-dev/nsgo@<version>` that brings `add`; there, `go tool nsgo add` runs the pinned nsgo, which does not know `add`.
 
 ## Libraries from Go packages

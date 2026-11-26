@@ -61,3 +61,24 @@ func init() {
 ```
 
 `import { Toggle } from "example.com/chips"` ardından alanları prop olarak alır ([TSX uygulamaları](../tsx.md#tsxten-go)).
+
+## nsgo-module.yaml
+
+Bir kütüphane, kendisini ekleyen uygulamalara bilmeleri gerekenleri `nsgo-module.yaml` ile söyler: modül kökünde `go.mod` dosyasının yanında duran isteğe bağlı bu dosyayı [`nsgo add`](../building.md#kütüphane-ekleme), hiçbir şey yazmadan önce planında gösterir:
+
+```yaml
+version: 1
+import: [player]            # uygulamaların içe aktardığı paketler, modül köküne göre; . köktür
+targets: [macos, windows_x64, linux_x64, ios, ios_simulator]
+notes: |
+  FFmpeg kütüphaneleri LGPL 2.1 lisanslıdır: kaynak kodlarını indirmelerinizin yanında sunun, FFmpeg'i belirtin ve değiştirilmelerine izin verin.
+components:                 # modülün kopyalanmak üzere sunduğu paketler
+  chat: ui/chat
+```
+
+- `import`, uygulamaların içe aktardığı paketleri sayar; her biri bu modülün bir paketidir, içine yerleştirilmiş bir modülün değildir ve `main` paketi değildir. Plan her biri için bir import satırı yazdırır; alan ya da dosya yoksa kök paketin satırını yazdırır.
+- `targets`, `build.targets` gibi hedef adlarını ve gruplarını alır. Plan, uygulamanın hedeflerinden listede olmayanları belirtir; `nsgo check -target` ise uygulamanın bağladığı ve listesinde denetlediği hedef bulunmayan her modül için uyarır. Alan yoksa ikisi de modül hakkında bir şey söylemez.
+- `notes`, satır sonları dışında denetim ya da biçim karakteri içermeyen en fazla 4 KiB düz metindir; planı `From <module>, the author's notes:` satırının altında, her satırı `|` ile işaretlenmiş olarak bitirir: bir lisansın yükümlülükleri gibi uygulamanın borçlu olduğu şeylerin yeridir.
+- `components`, 1 ile 64 arası küçük ASCII harf, rakam ve kısa çizgiden oluşan, kısa çizgiyle başlamayan ve bitmeyen adları modül kökünün altındaki paket dizinlerine eşler. Her dizin bu modülün `main` olmayan bir paketini içerir ve paketinin adıyla biter. Plan her bileşeni `nsgo add <module>#<name>` ile listeler; nsgo henüz bileşen kopyalamaz ve şimdilik bu komutu reddeder.
+
+Dosya katıdır: en fazla 1 MiB'lık tek bir YAML belgesi, sürüm 1, çapa, takma ad ya da nsgo'nun bilmediği alanlar olmadan; `nsgo add`, dosyasını kabul edemediği bir modülü `-y` olsa da olmasa da reddeder. Yeni alanlar sürüm 1'in içine eklenir; bu yüzden bunlardan birini kullanan bir modül onu okuyan NSGo'yu gerektirir ve daha eski bir nsgo, o NSGo'yu getiren `go get github.com/nsgo-dev/nsgo@<sürüm>` komutunu söyler. `nsgo build` bu dosyayı hiç okumaz.

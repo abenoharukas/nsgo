@@ -61,3 +61,24 @@ func init() {
 ```
 
 `import { Toggle } from "example.com/chips"` toma entonces los campos como propiedades ([Aplicaciones TSX](../tsx.md#go-desde-tsx)).
+
+## nsgo-module.yaml
+
+Una biblioteca indica a las aplicaciones que la añaden lo que deben saber en `nsgo-module.yaml`, un archivo opcional junto a su `go.mod` en la raíz del módulo, que [`nsgo add`](../building.md#añadir-bibliotecas) muestra en su plan antes de escribir nada:
+
+```yaml
+version: 1
+import: [player]            # paquetes que importan las aplicaciones, relativos a la raíz del módulo; . es la raíz
+targets: [macos, windows_x64, linux_x64, ios, ios_simulator]
+notes: |
+  Las bibliotecas de FFmpeg son LGPL 2.1: ofrece su código fuente junto a tus descargas, da crédito a FFmpeg y permite sustituirlas.
+components:                 # paquetes que el módulo ofrece para copiar
+  chat: ui/chat
+```
+
+- `import` nombra los paquetes que importan las aplicaciones, cada uno un paquete de este módulo, no de un módulo anidado en él, y no un paquete `main`. El plan imprime una línea de import para cada uno; sin el campo, o sin el archivo, imprime la del paquete raíz.
+- `targets` admite nombres y grupos de destinos como `build.targets`. El plan nombra los destinos de la aplicación que faltan en la lista, y `nsgo check -target` avisa de cada módulo que enlaza la aplicación cuya lista no tiene el destino que comprueba. Sin el campo, ninguno de los dos dice nada del módulo.
+- `notes`, texto plano de 4 KiB como máximo sin caracteres de control ni de formato salvo saltos de línea, cierra el plan bajo `From <module>, the author's notes:`, con cada línea marcada con `|`: es el lugar para lo que debe una aplicación, como las obligaciones de una licencia.
+- `components` asocia nombres de 1 a 64 letras ASCII minúsculas, dígitos y guiones, sin guion al principio ni al final, con directorios de paquetes bajo la raíz del módulo. Cada directorio contiene un paquete de este módulo que no es un paquete `main` y termina en el nombre de su paquete. El plan lista cada componente con `nsgo add <module>#<name>`; nsgo todavía no copia componentes y por ahora rechaza esa orden.
+
+El archivo es estricto: un solo documento YAML de 1 MiB como máximo, de la versión 1, sin anclas, alias ni campos que nsgo no conozca, y `nsgo add` rechaza un módulo cuyo archivo no puede aceptar, con `-y` o sin él. Los campos nuevos se añaden a la versión 1, así que un módulo que usa uno requiere el NSGo que lo lee, y un nsgo más antiguo indica el `go get github.com/nsgo-dev/nsgo@<versión>` que trae ese NSGo. `nsgo build` nunca lee el archivo.

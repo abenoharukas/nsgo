@@ -224,6 +224,8 @@ Apply these changes? [y/N]
 
 계획 수립 이후 `go.mod`와 `go.sum`이 둘 다 바뀌지 않았을 때만 각각 임시 파일에 쓴 뒤 이름을 바꿔 덮어쓰며, 오류나 중단이 생기면 두 파일을 모두 원래대로 되돌립니다. `vendor` 디렉터리가 있는 모듈에서는 계획이 다음 단계로 `go mod vendor`를 알려 줍니다.
 
+모듈에 [`nsgo-module.yaml`](authoring/shipping.md#nsgo-moduleyaml)이 있으면, 계획의 해당 모듈 블록에 파일이 나열하는 import 줄, 앱의 `build.targets` 중 모듈에 없는 타겟, 복사용으로 제공하는 컴포넌트가 더해지고, 작성자의 메모가 각 줄에 `|` 표시를 달고 계획의 끝에 붙습니다. `add`는 받아들일 수 없는 파일을 가진 모듈을 `-y` 여부와 관계없이 거부합니다.
+
 `add`는 NSGo 0.3.4 이후에 추가되었습니다. 0.3.4 또는 그 이전 릴리스를 고정한 모듈에서는 설치된 `nsgo`가 이 명령을 위해 모듈의 `nsgo`를 실행하지 않고, `add`를 가져오는 `go get github.com/nsgo-dev/nsgo@<버전>`을 출력합니다. 그런 모듈에서 `go tool nsgo add`는 `add`를 모르는 고정된 `nsgo`를 실행합니다.
 
 ## Go 패키지의 라이브러리

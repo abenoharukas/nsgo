@@ -61,3 +61,24 @@ func init() {
 ```
 
 `import { Toggle } from "example.com/chips"` kemudian menerima field-fieldnya sebagai props ([Aplikasi TSX](../tsx.md#go-dari-tsx)).
+
+## nsgo-module.yaml
+
+Sebuah pustaka memberi tahu aplikasi yang menambahkannya apa yang perlu mereka ketahui lewat `nsgo-module.yaml`, file opsional di samping `go.mod` pada akar modul, yang ditampilkan [`nsgo add`](../building.md#menambahkan-pustaka) dalam rencananya sebelum menulis apa pun:
+
+```yaml
+version: 1
+import: [player]            # paket yang diimpor aplikasi, relatif terhadap akar modul; . adalah akar
+targets: [macos, windows_x64, linux_x64, ios, ios_simulator]
+notes: |
+  Pustaka FFmpeg berlisensi LGPL 2.1: sediakan kode sumbernya di samping unduhan Anda, cantumkan FFmpeg, dan izinkan penggantiannya.
+components:                 # paket yang ditawarkan modul untuk disalin
+  chat: ui/chat
+```
+
+- `import` menyebutkan paket yang diimpor aplikasi, masing-masing paket milik modul ini, bukan milik modul yang bersarang di dalamnya, dan bukan paket `main`. Rencana mencetak satu baris import untuk masing-masing; tanpa kolom ini, atau tanpa file-nya, rencana mencetak baris paket akar.
+- `targets` menerima nama dan grup target seperti `build.targets`. Rencana menyebutkan target aplikasi yang tidak ada dalam daftar, dan `nsgo check -target` memperingatkan setiap modul yang ditautkan aplikasi yang daftarnya tidak memuat target yang diperiksanya. Tanpa kolom ini, keduanya tidak mengatakan apa pun tentang modul itu.
+- `notes`, teks biasa paling banyak 4 KiB tanpa karakter kontrol atau format selain pemisah baris, menutup rencana di bawah `From <module>, the author's notes:`, dengan setiap baris ditandai `|`: tempat untuk apa yang menjadi kewajiban aplikasi, seperti kewajiban sebuah lisensi.
+- `components` memetakan nama berupa 1 sampai 64 huruf kecil ASCII, angka, dan tanda hubung, yang tidak diawali atau diakhiri tanda hubung, ke direktori paket di bawah akar modul. Setiap direktori berisi paket milik modul ini yang bukan paket `main`, dan berakhir dengan nama paketnya. Rencana mencantumkan setiap komponen dengan `nsgo add <module>#<name>`; nsgo belum menyalin komponen dan untuk sementara menolak perintah itu.
+
+File ini ketat: satu dokumen YAML paling besar 1 MiB, versi 1, tanpa anchor, alias, atau kolom yang tidak dikenal nsgo, dan `nsgo add` menolak modul yang file-nya tidak dapat diterimanya, dengan atau tanpa `-y`. Kolom baru ditambahkan di dalam versi 1, sehingga modul yang memakainya membutuhkan NSGo yang dapat membacanya, dan nsgo yang lebih lama menyebutkan `go get github.com/nsgo-dev/nsgo@<versi>` yang membawa NSGo tersebut. `nsgo build` tidak pernah membaca file ini.

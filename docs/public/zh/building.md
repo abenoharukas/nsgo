@@ -197,6 +197,8 @@ Apply these changes? [y/N]
 
 只有在规划之后 `go.mod` 和 `go.sum` 都没有改变时，它才写入这两个文件，各自先写入临时文件再改名覆盖；出错或被中断时，两个文件都恢复原样。有 `vendor` 目录的模块，计划会把 `go mod vendor` 列为下一步。
 
+模块带有 [`nsgo-module.yaml`](authoring/shipping.md#nsgo-moduleyaml) 时，它在计划中的那一块会列出这个文件给出的 import 行、应用的 `build.targets` 中这个模块没有的目标，以及它提供复制的组件，作者的说明则放在计划最后，每行以 `|` 标记。文件不能通过检查的模块，`add` 一律拒绝，无论是否给出 `-y`。
+
 `add` 是 NSGo 0.3.4 之后新增的。在固定为 0.3.4 或更早正式版本的模块中，已安装的 `nsgo` 不会为它运行[模块的 nsgo](#模块的-nsgo)，而是打印引入 `add` 的 `go get github.com/nsgo-dev/nsgo@<版本>`；在那里，`go tool nsgo add` 运行的是固定的 nsgo，它不认识 `add`。
 
 ## 来自 Go 包的库

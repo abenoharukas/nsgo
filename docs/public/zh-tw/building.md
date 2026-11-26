@@ -224,6 +224,8 @@ Apply these changes? [y/N]
 
 只有在規劃之後 `go.mod` 與 `go.sum` 都沒有改變時，它才寫入這兩個檔案，各自先寫入暫存檔再改名覆蓋；發生錯誤或被中斷時，兩個檔案都會還原。有 `vendor` 目錄的模組，計畫會把 `go mod vendor` 列為下一步。
 
+模組帶有 [`nsgo-module.yaml`](authoring/shipping.md#nsgo-moduleyaml) 時，它在計畫中的那一塊會列出這個檔案給出的 import 行、應用程式的 `build.targets` 中這個模組沒有的目標，以及它提供複製的元件，作者的說明則放在計畫最後，每行以 `|` 標示。檔案無法通過檢查的模組，`add` 一律拒絕，無論是否給出 `-y`。
+
 `add` 是 NSGo 0.3.4 之後新增的。在固定為 0.3.4 或更早正式版本的模組中，已安裝的 `nsgo` 不會為它執行模組的 `nsgo`，而是印出引入 `add` 的 `go get github.com/nsgo-dev/nsgo@<版本>`；在那裡，`go tool nsgo add` 執行的是固定的 `nsgo`，它不認識 `add`。
 
 ## 來自 Go 套件的函式庫

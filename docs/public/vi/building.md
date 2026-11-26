@@ -224,6 +224,8 @@ Dù có `-y` hay không, `add` từ chối:
 
 Nó chỉ ghi `go.mod` và `go.sum` khi cả hai đều chưa thay đổi kể từ lúc lập kế hoạch, mỗi tệp qua một tệp tạm được đổi tên đè lên, và khôi phục cả hai khi có lỗi hoặc bị ngắt. Với module có thư mục `vendor`, kế hoạch nêu `go mod vendor` là bước tiếp theo.
 
+Khi một module có [`nsgo-module.yaml`](authoring/shipping.md#nsgo-moduleyaml), khối của nó trong kế hoạch nêu các dòng import mà tệp liệt kê, các target trong `build.targets` của ứng dụng mà module không có và các thành phần nó cung cấp để sao chép, còn ghi chú của tác giả kết thúc kế hoạch, mỗi dòng được đánh dấu `|`. `add` từ chối module có tệp mà nó không chấp nhận được, dù có `-y` hay không.
+
 `add` có từ sau NSGo 0.3.4. Trong module cố định 0.3.4 hoặc một bản phát hành cũ hơn, `nsgo` đã cài không chạy `nsgo` của module cho lệnh này mà in ra `go get github.com/nsgo-dev/nsgo@<phiên bản>` mang `add` đến; ở đó, `go tool nsgo add` chạy `nsgo` được cố định, vốn không biết `add`.
 
 ## Thư viện từ các gói Go

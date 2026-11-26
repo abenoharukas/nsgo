@@ -51,6 +51,8 @@ Apps importing `base/terminal` ship libghostty-vt beside Windows/Linux executabl
 
 Go dependencies can ship prebuilt desktop shared libraries, and with `version: 2` iOS and tvOS frameworks, through their package's `nsgo-natives.yaml`: NSGo verifies checksums, bundles licenses, signs and includes them in installers, `nsgo dev` and `-run` without app configuration. Package authors declare target names, URL (https in version 2) or local files, SHA-256 and license paths, and preserve these files with `go:embed` for vendoring; a framework is an arm64 dylib built for its platform, at most the app's minimum OS, with the install name `@rpath/<Name>.framework/<Name>`. `-embed` stops on a package's iOS frameworks. [Native libraries](https://nsgo.dev/docs/native-libraries.md) gives the contract and loading directories.
 
+A library's optional `nsgo-module.yaml`, beside its `go.mod`, names the packages apps import, the targets it works on, notes for its users and the packages it offers for copying. `nsgo add` shows all of it in the plan, the notes last and marked `|`, and refuses a module whose file is invalid; `nsgo check -target` warns of a linked module whose `targets` lack the target. The notes carry what the app owes, such as license duties: relay them to the app's author. [nsgo-module.yaml](https://nsgo.dev/docs/authoring/shipping.md#nsgo-moduleyaml)
+
 For terminal apps, use `nsgo dev -target tui` and `nsgo test -target tui` in an interactive terminal with `nsgotest.Main`. Choose cell-sized styles explicitly (8×16 points per cell); Control is `mod` on every host. Diagnostics go to `.nsgo/tui.log`; media/canvas/native hosted views are not implemented. [Terminal targets](https://nsgo.dev/docs/building.md#terminal)
 
 ## Writing an app
