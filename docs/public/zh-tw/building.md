@@ -114,7 +114,7 @@ build:
 # miniprogram: { appid: { wechat: wx0123456789abcdef, alipay: "2021000000000000" }, custom_navigation: false }  # the mini programs'
 ```
 
-`nsgo.yaml` 中任何一層出現它不認識的鍵，讀取該檔案的每個命令都會報錯，指出所在行、所屬區段和最接近的已知鍵：`nsgo.yaml:12: android has no key permisions; did you mean permissions?`。`apple.info` 與 `macos.entitlements` 下的鍵會原樣寫入 plist，因此不檢查拼寫。
+`nsgo.yaml` 中任何一層出現它不認識的鍵，讀取該檔案的每個 `nsgo` 命令都會報錯，指出所在行、所屬區段和最接近的已知鍵：`nsgo.yaml:12: android has no key permisions; did you mean permissions?`。`apple.info`、`macos.entitlements`、`miniprogram.appid`、`itch.channels` 這類映射接受任意鍵，因此不檢查其中鍵的拼寫。
 
 在 `targets` 中（或在 `nsgo build -target` 與 `nsgo check -target` 中）僅寫作業系統名稱，代表包含其所有架構（`windows` 即代表 `windows_arm64` 與 `windows_x64`；`android` 僅代表 `android_arm64`，因為 x86_64 建置需要 NDK）。`macos_universal`（未包含在 `macos` 與 `all` 中）會同時建置兩種 macOS 架構並將其合併為單一應用程式，包含其函式庫與小工具。Steam 渠道會使用通用應用程式套件。安裝程式建置會將其打包為單一磁碟映像檔，並在直接發佈渠道上產生單一 Sparkle 訂閱源。`nsgo test -target` 也接受測試執行的目標架構名稱：桌面作業系統對應本機架構，Android 對應 `arm64`，因此在 x64 Windows 機器上執行 `windows_x64` 會執行 `windows` 目標測試，而若指定該目標無法執行的架構則會被拒絕並提示應使用的名稱。
 

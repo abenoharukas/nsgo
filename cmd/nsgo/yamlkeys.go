@@ -70,18 +70,23 @@ func (c *keyCheck) walk(n *yaml.Node, t reflect.Type, path string) {
 				c.merge(value, t, path)
 				continue
 			}
-			if key.Kind != yaml.ScalarNode {
+			// A key written as an alias (*k) is the one its anchor names, as the decoder reads it, though an error gives the alias's line.
+			name := key
+			for name.Kind == yaml.AliasNode && name.Alias != nil {
+				name = name.Alias
+			}
+			if name.Kind != yaml.ScalarNode {
 				continue
 			}
 			typ := rest
-			if at := slices.IndexFunc(fields, func(f yamlField) bool { return f.key == key.Value }); at >= 0 {
+			if at := slices.IndexFunc(fields, func(f yamlField) bool { return f.key == name.Value }); at >= 0 {
 				typ = fields[at].typ
 			}
 			if typ == nil {
-				c.unknown(key, path, fields)
+				c.unknown(key.Line, name.Value, path, fields)
 				continue
 			}
-			c.walk(value, typ, joinKeyPath(path, key.Value))
+			c.walk(value, typ, joinKeyPath(path, name.Value))
 		}
 	case t.Kind() == reflect.Map && n.Kind == yaml.MappingNode:
 		for i := 0; i+1 < len(n.Content); i += 2 {
@@ -110,14 +115,14 @@ func (c *keyCheck) merge(n *yaml.Node, t reflect.Type, path string) {
 	c.walk(n, t, path)
 }
 
-// unknown refuses key, which the mapping at path, of fields, has no field for.
-func (c *keyCheck) unknown(key *yaml.Node, path string, fields []yamlField) {
+// unknown refuses key, on line, which the mapping at path, of fields, has no field for.
+func (c *keyCheck) unknown(line int, key, path string, fields []yamlField) {
 	in := path
 	if in == "" {
 		in = c.name
 	}
-	msg := fmt.Sprintf("%s:%d: %s has no key %s", c.name, key.Line, in, keyName(key.Value))
-	if near := nearestKey(key.Value, fields); near != "" {
+	msg := fmt.Sprintf("%s:%d: %s has no key %s", c.name, line, in, keyName(key))
+	if near := nearestKey(key, fields); near != "" {
 		msg += "; did you mean " + near + "?"
 	}
 	c.errs = append(c.errs, errors.New(msg))

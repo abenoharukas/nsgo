@@ -114,7 +114,7 @@ build:
 # miniprogram: { appid: { wechat: wx0123456789abcdef, alipay: "2021000000000000" }, custom_navigation: false }  # the mini programs'
 ```
 
-`nsgo.yaml`의 어느 단계에서든 모르는 키가 있으면 이 파일을 읽는 모든 명령이 실패하며, 그 줄과 속한 섹션, 가장 가까운 알려진 키를 알려 줍니다: `nsgo.yaml:12: android has no key permisions; did you mean permissions?`. `apple.info`와 `macos.entitlements`의 키는 그대로 plist에 기록되므로 철자를 검사하지 않습니다.
+`nsgo.yaml`의 어느 단계에서든 모르는 키가 있으면 이 파일을 읽는 모든 `nsgo` 명령이 실패하며, 그 줄과 속한 섹션, 가장 가까운 알려진 키를 알려 줍니다: `nsgo.yaml:12: android has no key permisions; did you mean permissions?`. `apple.info`, `macos.entitlements`, `miniprogram.appid`, `itch.channels` 같은 맵은 어떤 키든 받으므로 그 키의 철자는 검사하지 않습니다.
 
 `targets`나 `nsgo build -target`, `nsgo check -target`에 아키텍처 없는 OS 이름만 쓰면 해당 OS의 아키텍처들을 뜻합니다(`windows`는 `windows_arm64`와 `windows_x64`, `android`는 x86_64 빌드에 NDK가 필요하므로 `android_arm64`만 포함). `macos`와 `all`에서 제외되는 `macos_universal`은 두 macOS 아키텍처를 모두 빌드해 라이브러리와 위젯까지 하나의 앱으로 합칩니다. Steam 채널은 유니버설 앱 번들을 사용하며, 인스톨러 빌드는 이를 하나의 디스크 이미지로 묶고 직접(direct) 채널에서는 하나의 Sparkle 피드를 생성합니다. `nsgo test -target`에도 테스트를 실행할 아키텍처 이름을 지정할 수 있습니다. 데스크톱 OS는 현재 머신의 아키텍처에서, Android는 `arm64`에서 실행되므로 x64 Windows 머신에서는 `windows_x64`로 `windows` 타겟을 실행할 수 있으며, 실행할 수 없는 아키텍처를 지정하면 올바른 이름과 함께 거부됩니다.
 

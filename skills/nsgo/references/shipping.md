@@ -41,7 +41,7 @@ build:
 # steam: { app_id: 480 }      # use your Steamworks App ID for native dev
 ```
 
-Every command that reads `nsgo.yaml` refuses a key it does not know, at its line, naming the nearest known one (`nsgo.yaml:12: android has no key permisions; did you mean permissions?`); keys under `apple.info` and `macos.entitlements` go into the plists unchecked.
+Every `nsgo` command that reads `nsgo.yaml` refuses a key it does not know, at its line, naming the nearest known one (`nsgo.yaml:12: android has no key permisions; did you mean permissions?`); maps such as `apple.info`, `macos.entitlements`, `miniprogram.appid` and `itch.channels` take any key unchecked.
 
 A flag replaces the value it names (`-target`, `-version`, `-output`, or the signing profiles `-profile`, `-widgets-profile`, `-share-profile` and `-clip-profile`); `nsgo build -h` lists them. Read the version-matched [Building and shipping](https://nsgo.dev/docs/building.md) page for the rest: installers, store packages, signing, notarizing, GitHub releases, updates, file types, App Clips, widgets and mini programs.
 

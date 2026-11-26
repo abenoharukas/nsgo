@@ -114,7 +114,7 @@ build:
 # miniprogram: { appid: { wechat: wx0123456789abcdef, alipay: "2021000000000000" }, custom_navigation: false }  # the mini programs'
 ```
 
-`nsgo.yaml` のどの階層でも知らないキーがあると、このファイルを読むすべてのコマンドが失敗し、その行、属するセクション、最も近い既知のキーを示します：`nsgo.yaml:12: android has no key permisions; did you mean permissions?`。`apple.info` と `macos.entitlements` のキーはそのまま plist に書き込まれるため、綴りは検査されません。
+`nsgo.yaml` のどの階層でも知らないキーがあると、このファイルを読むすべての `nsgo` コマンドが失敗し、その行、属するセクション、最も近い既知のキーを示します：`nsgo.yaml:12: android has no key permisions; did you mean permissions?`。`apple.info`、`macos.entitlements`、`miniprogram.appid`、`itch.channels` などのマップは任意のキーを受け付けるため、そのキーの綴りは検査されません。
 
 `targets` や `nsgo build -target`、`nsgo check -target` にアーキテクチャなしの OS 名を指定すると、その OS の各アーキテクチャを意味します（`windows` は `windows_arm64` と `windows_x64`、x86_64 ビルドに NDK が必要な `android` は `android_arm64` のみ）。`macos` と `all` には含まれない `macos_universal` は、両方の macOS アーキテクチャをビルドしてライブラリやウィジェットを含めた 1 つのアプリに結合します。Steam チャンネルはこのユニバーサルアプリバンドルを使用します。インストーラービルドはそれを 1 つのディスクイメージにまとめ、direct チャンネルでは 1 つの Sparkle フィードになります。`nsgo test -target` もテストを実行するアーキテクチャ名を受け取ります（デスクトップ OS は実行中マシンのアーキテクチャ、Android は `arm64`）。たとえば x64 Windows マシンで `windows_x64` を指定すると `windows` ターゲットが実行され、実行できないアーキテクチャを指定すると使用すべき名前を添えて拒否されます。
 

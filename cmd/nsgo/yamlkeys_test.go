@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
+	"os/exec"
+	"path"
 	"path/filepath"
 	"reflect"
 	"slices"
@@ -46,6 +48,8 @@ func TestNSGoYAMLRefusesUnknownKeys(t *testing.T) {
 		// An alias and a merge key bring their mapping's keys where they are used, which checks them there, at the lines they are written on.
 		{"name: A\nwindows: &windows\n  path: true\nlinux: *windows\n", "nsgo.yaml:3: linux has no key path"},
 		{"name: A\nwindows: &windows\n  path: true\nlinux:\n  <<: *windows\n", "nsgo.yaml:3: linux has no key path"},
+		// A key written as an alias is the key its anchor names, refused at the alias's line, though the anchor is in a map that takes any key.
+		{"name: A\napple:\n  info:\n    &k permisions: x\nandroid:\n  *k : [CAMERA]\n", "nsgo.yaml:6: android has no key permisions; did you mean permissions?"},
 	} {
 		_, err := loadYAML(t, tc.yaml)
 		if err == nil || err.Error() != tc.want {
@@ -241,22 +245,7 @@ func TestRepositoryNSGoYAMLsLoad(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	var dirs []string
-	err = filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-		if d.IsDir() && path != root && (strings.HasPrefix(d.Name(), ".") || d.Name() == "node_modules") {
-			return filepath.SkipDir
-		}
-		if d.Name() == "nsgo.yaml" && d.Type().IsRegular() {
-			dirs = append(dirs, filepath.Dir(path))
-		}
-		return nil
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
+	dirs := repositoryNSGoYAMLs(t, root)
 	if len(dirs) < 40 {
 		t.Fatalf("found %d nsgo.yaml files under %s, too few for the repository's", len(dirs), root)
 	}
@@ -279,4 +268,36 @@ func TestRepositoryNSGoYAMLsLoad(t *testing.T) {
 	if _, err := load(dir); err != nil {
 		t.Errorf("nsgo init's nsgo.yaml: %v", err)
 	}
+}
+
+// repositoryNSGoYAMLs are the directories under root of the nsgo.yaml files Git tracks, so that an untracked one of a local checkout, such as a scratch app's or a nested worktree's, does not fail the test; without Git, those of every nsgo.yaml under root outside hidden directories and node_modules.
+func repositoryNSGoYAMLs(t *testing.T, root string) []string {
+	t.Helper()
+	var dirs []string
+	cmd := exec.Command("git", "ls-files", "-z", "--", "*nsgo.yaml")
+	cmd.Dir = root
+	if out, err := cmd.Output(); err == nil {
+		for _, name := range strings.Split(strings.TrimRight(string(out), "\x00"), "\x00") {
+			if path.Base(name) == "nsgo.yaml" {
+				dirs = append(dirs, filepath.Join(root, filepath.FromSlash(path.Dir(name))))
+			}
+		}
+		return dirs
+	}
+	err := filepath.WalkDir(root, func(name string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if d.IsDir() && name != root && (strings.HasPrefix(d.Name(), ".") || d.Name() == "node_modules") {
+			return filepath.SkipDir
+		}
+		if d.Name() == "nsgo.yaml" && d.Type().IsRegular() {
+			dirs = append(dirs, filepath.Dir(name))
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return dirs
 }

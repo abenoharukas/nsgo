@@ -92,6 +92,13 @@ func build(fsys fs.FS, entry string, hot bool) (string, error) {
 	return "", errors.New("compiler: esbuild wrote no script")
 }
 
+// StatusBar is nsgo.yaml's status_bar, a TSX app's default status bar on iOS and Android, under its pages' and dialogs': Foreground is auto, light or dark, and Hidden and Immersive are unset unless written. setupScript gives it to the runtime as JSON, and the nsgo tool decodes status_bar into it too, so the keys the tool refuses are the ones this package does not read.
+type StatusBar struct {
+	Foreground string `yaml:"foreground" json:"foreground,omitempty"`
+	Hidden     *bool  `yaml:"hidden" json:"hidden,omitempty"`
+	Immersive  *bool  `yaml:"immersive" json:"immersive,omitempty"`
+}
+
 // setupScript is what runs before the app: the theme file, the Tailwind
 // theme and the default status bar nsgo.yaml beside the entry names,
 // given to the runtime ("" without any). It is one line, so the source map's lines stay
@@ -133,11 +140,7 @@ func setupScript(fsys fs.FS, entry string) (string, error) {
 		opts = append(opts, "tailwind: "+strconv.Quote(string(tw)))
 	}
 	if !config.StatusBar.IsZero() {
-		var sb struct {
-			Foreground string `yaml:"foreground" json:"foreground,omitempty"`
-			Hidden     *bool  `yaml:"hidden" json:"hidden,omitempty"`
-			Immersive  *bool  `yaml:"immersive" json:"immersive,omitempty"`
-		}
+		var sb StatusBar
 		if err := config.StatusBar.Decode(&sb); err != nil {
 			return "", fmt.Errorf("nsgo.yaml: status_bar: %w", err)
 		}
