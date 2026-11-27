@@ -153,8 +153,15 @@ func addModulesWithIndex(ctx context.Context, o addOptions, args []string, idx *
 	if !p.changes() || o.dryRun {
 		return nil
 	}
-	if !o.yes {
+	if o.yes {
+		if err := p.yesRefusal(); err != nil {
+			return err
+		}
+	} else {
 		if ask == nil {
+			if len(p.brokenCopies) > 0 {
+				return errors.New("add: the plan breaks copied components and cannot be applied with -y or without a terminal; review the plan and confirm interactively")
+			}
 			return fmt.Errorf("add: the plan was not applied, as nobody can confirm it without a terminal: run %s add -y %s to apply it", nsgoCommand(), strings.Join(args, " "))
 		}
 		ok, err := ask(ctx)
@@ -360,6 +367,7 @@ type addPlan struct {
 	oldMod, newMod, oldSum, newSum []byte
 	hadSum, hasSum                 bool
 	before, after                  *modfile.File
+	brokenCopies                   []brokenCopy
 }
 
 // addItem is a request as planned: the version it takes, the one the module had selected before, and what go list says of it.
@@ -487,6 +495,11 @@ func (m *addModule) plan(ctx context.Context, reqs []addRequest) (*addPlan, erro
 			item.initial = before.Version
 		}
 		p.items = append(p.items, item)
+	}
+	if p.changes() {
+		if err := p.checkCopiedComponents(ctx, tmp); err != nil {
+			return nil, err
+		}
 	}
 	return p, nil
 }
@@ -641,6 +654,7 @@ func (p *addPlan) write(w io.Writer) error {
 		row("go.sum", sum)
 	}
 	rows("tools", p.toolChanges())
+	rows("copies", p.brokenCopyLines())
 	if line := p.private(); line != "" {
 		row("private", line)
 	}
