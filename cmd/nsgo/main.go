@@ -15,6 +15,9 @@
 //	nsgo i18n  [-source L] [dir]                         check catalogs and write their Go code
 //	nsgo add   [-dry-run] [-y] module[@version] ...      go get modules once their plan is shown and
 //	                                                      confirmed, never moving NSGo off its releases
+//	nsgo diff  [-stat] [-exit-code] [name | dir][@version]
+//	                                                      show what the app changed in a copied component,
+//	                                                      what another version would change, or list copies
 //	nsgo version                                         print which nsgo runs
 //	nsgo doctor                                          show which targets this machine builds and runs
 //	nsgo keygen                                          print a key pair for updates or signed packages
@@ -205,6 +208,19 @@ func main() {
 			report(err)
 			os.Exit(130)
 		}
+	case "diff":
+		fs := flag.NewFlagSet("diff", flag.ExitOnError)
+		var o diffOptions
+		fs.BoolVar(&o.stat, "stat", false, "print changed lines per file")
+		fs.BoolVar(&o.exitCode, "exit-code", false, "exit with status 1 when there are differences")
+		if err = parseCommand(fs, args, 1); err != nil {
+			break
+		}
+		var changed bool
+		changed, err = diffCommand(ctx, o, fs.Arg(0), os.Stdout, os.Stderr)
+		if err == nil && o.exitCode && changed {
+			os.Exit(1)
+		}
 	case "version":
 		fs := flag.NewFlagSet("version", flag.ExitOnError)
 		if err = parseCommand(fs, args, 0); err != nil {
@@ -324,6 +340,7 @@ func usage() {
   nsgo check [-target all|macos_arm64,windows_x64,linux_x64,ios,web,...] [dir]
   nsgo i18n  [-source L] [dir]
   nsgo add   [-dry-run] [-y] module[@version] ...
+  nsgo diff  [-stat] [-exit-code] [name | dir][@version]
   nsgo doctor
   nsgo version
   nsgo keygen
