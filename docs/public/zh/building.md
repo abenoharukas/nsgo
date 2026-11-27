@@ -199,6 +199,8 @@ Apply these changes? [y/N]
 
 `add` 是 NSGo 0.3.4 之后新增的。在固定为 0.3.4 或更早正式版本的模块中，已安装的 `nsgo` 不会为它运行[模块的 nsgo](#模块的-nsgo)，而是打印引入 `add` 的 `go get github.com/nsgo-dev/nsgo@<版本>`；在那里，`go tool nsgo add` 运行的是固定的 nsgo，它不认识 `add`。
 
+`nsgo add` 也可以复制模块在 `nsgo-module.yaml` 中声明的组件（`nsgo add [-diff] [-dir D] [-tests=false] module[@version]#component`），重写其导入路径、生成多语言目录、检查许可证并在 `nsgo-copy.yaml` 中记录来源。详见[复制组件](copying-components.md)。
+
 ## 来自 Go 包的库
 
 桌面应用构建和目标测试对应用代码使用 `CGO_ENABLED=0`，NSGo 自身也遵循这一规则。应用包若含有 cgo 文件，构建会列出这些文件并停止，不会静默丢弃它们。原生库请使用 purego 和 `nsgo-natives.yaml`。

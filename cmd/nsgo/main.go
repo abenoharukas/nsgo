@@ -13,8 +13,10 @@
 //	                                                      on a platform
 //	nsgo check [-target T] [-jobs N] [dir]               vet the app and type-check its TSX
 //	nsgo i18n  [-source L] [dir]                         check catalogs and write their Go code
-//	nsgo add   [-dry-run] [-y] module[@version] ...      go get modules once their plan is shown and
-//	                                                      confirmed, never moving NSGo off its releases
+//	nsgo add   [-dry-run] [-y] [-diff] [-dir D] [-tests=false] module[@version][#component] ...
+//	                                                      go get modules or copy declared components once their
+//	                                                      plan is shown and confirmed, never moving NSGo off its
+//	                                                      releases
 //	nsgo version                                         print which nsgo runs
 //	nsgo doctor                                          show which targets this machine builds and runs
 //	nsgo keygen                                          print a key pair for updates or signed packages
@@ -192,9 +194,18 @@ func main() {
 		var o addOptions
 		fs.BoolVar(&o.dryRun, "dry-run", false, "print the plan and write nothing")
 		fs.BoolVar(&o.yes, "y", false, "apply the plan without asking")
+		fs.BoolVar(&o.diff, "diff", false, "print every copied component file in full")
+		fs.StringVar(&o.dir, "dir", "", "destination `directory` for the copied component, ending in its package name")
+		tests := fs.Bool("tests", true, "copy a component's _test.go files and testdata/")
 		if err = fs.Parse(args); err != nil {
 			break
 		}
+		fs.Visit(func(f *flag.Flag) {
+			if f.Name == "tests" {
+				o.testsSet = true
+			}
+		})
+		o.skipTests = !*tests
 		var ask func(context.Context) (bool, error)
 		if stdinIsTerminal() {
 			ask = askToApply
@@ -323,7 +334,7 @@ func usage() {
   nsgo test  [-run REGEXP] [-bench REGEXP] [-junit FILE] [-trace] [-target macos|windows|linux|web|ios_simulator|tvos_simulator|android [-fps]] [packages... | dir | App.tsx < steps] [-- go test flags]
   nsgo check [-target all|macos_arm64,windows_x64,linux_x64,ios,web,...] [dir]
   nsgo i18n  [-source L] [dir]
-  nsgo add   [-dry-run] [-y] module[@version] ...
+  nsgo add   [-dry-run] [-y] [-diff] [-dir D] [-tests=false] module[@version][#component] ...
   nsgo doctor
   nsgo version
   nsgo keygen

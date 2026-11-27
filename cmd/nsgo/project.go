@@ -148,6 +148,11 @@ type project struct {
 		// Coverage is warn (default) or off for dependency translations.
 		Coverage string `yaml:"coverage"`
 	} `yaml:"i18n"`
+	// Components configures copied components: Dir is the directory, relative to
+	// nsgo.yaml, where nsgo add places copied components (default: components).
+	Components struct {
+		Dir string `yaml:"dir"`
+	} `yaml:"components"`
 	// Web is the web target's: Host is a JS module, relative to
 	// nsgo.yaml and inside its directory, whose createHost(player) gives
 	// the app's page its host. Offline enables an offline launch of the
