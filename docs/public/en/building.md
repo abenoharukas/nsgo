@@ -231,6 +231,8 @@ It writes `go.mod` and `go.sum` only when neither has changed since planning, ea
 
 `add` is new after NSGo 0.3.4. In a module that pins 0.3.4 or an earlier release, an installed `nsgo` does not run [the module's nsgo](#the-modules-nsgo) for it but prints the `go get github.com/nsgo-dev/nsgo@<version>` that brings `add`; there, `go tool nsgo add` runs the pinned nsgo, which does not know `add`.
 
+`nsgo add` also copies components declared in a module's `nsgo-module.yaml` (`nsgo add [-diff] [-dir D] [-tests=false] module[@version]#component`), rewriting their imports, generating their catalogs, checking their licenses and recording their source in `nsgo-copy.yaml`. See [Copying components](copying-components.md).
+
 ## Libraries from Go packages
 
 Desktop app builds and target tests compile app code with `CGO_ENABLED=0`, as they do NSGo itself. If an app package contains cgo files, the build stops and names them instead of silently dropping them. Use purego and `nsgo-natives.yaml` for native libraries.

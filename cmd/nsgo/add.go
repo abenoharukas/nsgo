@@ -29,44 +29,135 @@ import (
 
 // addOptions are nsgo add's flags.
 type addOptions struct {
-	dryRun bool // print the plan and write nothing
-	yes    bool // apply the plan without asking
+	dryRun    bool   // print the plan and write nothing
+	yes       bool   // apply the plan without asking
+	diff      bool   // print every copied component file in full
+	dir       string // destination directory for the one copied component
+	skipTests bool   // -tests=false leaves out _test.go files and testdata/
 }
 
-// addRequest is a module named on nsgo add's command line: its path, and the version typed after @, else the query upgrade, which takes the newest release and never lowers a version.
+// addRequest is a module or component named on nsgo add's command line: its
+// module path, the version typed after @ (else the query upgrade for libraries,
+// or resolved from go.mod/index/upgrade for components), and the optional
+// component name.
 type addRequest struct {
 	path, version string
 	typed         bool
+	component     string
+	fromName      string
+	itemVersion   string
+	itemLicense   string
 }
 
-// parseAddRequests reads nsgo add's arguments, a module[@version] each, as nsgo init reads a template's module, without #name.
+func (r addRequest) displayName() string {
+	if r.fromName != "" {
+		return r.fromName
+	}
+	if r.component != "" {
+		return r.path + "#" + r.component
+	}
+	return r.path
+}
+
+func (r addRequest) displayArg() string {
+	if r.fromName != "" {
+		if r.typed {
+			return r.fromName + "@" + r.version
+		}
+		return r.fromName
+	}
+	s := r.path
+	if r.typed {
+		s += "@" + r.version
+	}
+	if r.component != "" {
+		s += "#" + r.component
+	}
+	return s
+}
+
+// parseAddRequests reads nsgo add's arguments: module[@version][#component] or
+// a listed registry name[@version].
 func parseAddRequests(args []string) ([]addRequest, error) {
 	if len(args) == 0 {
-		return nil, fmt.Errorf("add: name a module: %s add module[@version]", nsgoCommand())
+		return nil, fmt.Errorf("add: name a module or component: %s add module[@version][#component]", nsgoCommand())
 	}
 	var reqs []addRequest
 	for _, arg := range args {
 		if strings.HasPrefix(arg, "-") {
 			return nil, fmt.Errorf("add: flags go before the modules: %s add %s %s", nsgoCommand(), arg, args[0])
 		}
-		path, version, name, ok := parseModuleTemplate(arg)
-		if !ok || name != "" || strings.Contains(arg, "#") {
-			return nil, fmt.Errorf("add: %q is not a module path with an optional @version", arg)
+		var req addRequest
+		if strings.Contains(arg, "#") {
+			spec, comp, _ := strings.Cut(arg, "#")
+			if !isValidCopyComponentName(comp) {
+				return nil, fmt.Errorf("add: %q has an invalid component name %q", arg, comp)
+			}
+			path, version, hasVersion := strings.Cut(spec, "@")
+			if hasVersion && version == "" {
+				return nil, fmt.Errorf("add: %q is not a module path with an optional @version and #component", arg)
+			}
+			if err := module.CheckPath(path); err != nil {
+				return nil, fmt.Errorf("add: %q: %w", arg, err)
+			}
+			if hasVersion && version == "none" {
+				return nil, fmt.Errorf("add: %s@none would remove %s; add never removes a module", path, path)
+			}
+			req = addRequest{path: path, version: version, typed: hasVersion, component: comp}
+		} else {
+			spec, version, hasVersion := strings.Cut(arg, "@")
+			if hasVersion && version == "" {
+				return nil, fmt.Errorf("add: %q is not a module path with an optional @version", arg)
+			}
+			domain, _, _ := strings.Cut(spec, "/")
+			if strings.Contains(domain, ".") {
+				path, parsedVer, name, ok := parseModuleTemplate(arg)
+				if !ok || name != "" {
+					return nil, fmt.Errorf("add: %q is not a module path with an optional @version", arg)
+				}
+				if err := module.CheckPath(path); err != nil {
+					return nil, fmt.Errorf("add: %q: %w", arg, err)
+				}
+				typed := strings.Contains(arg, "@")
+				if !typed {
+					parsedVer = "upgrade"
+				}
+				if parsedVer == "none" {
+					return nil, fmt.Errorf("add: %s@none would remove %s; add never removes a module", path, path)
+				}
+				req = addRequest{path: path, version: parsedVer, typed: typed}
+			} else if isValidCopyComponentName(spec) {
+				item, ok := lookupAddIndexItem(spec)
+				if !ok {
+					return nil, fmt.Errorf("add: %q is not a module path with an optional @version", arg)
+				}
+				if hasVersion && version == "none" {
+					return nil, fmt.Errorf("add: %s@none would remove %s; add never removes a module", spec, item.Module)
+				}
+				if item.Component != "" {
+					req = addRequest{
+						path:        item.Module,
+						version:     version,
+						typed:       hasVersion,
+						component:   item.Component,
+						fromName:    spec,
+						itemVersion: item.Version,
+						itemLicense: item.License,
+					}
+				} else {
+					if !hasVersion {
+						version = cmp.Or(item.Version, "upgrade")
+					}
+					req = addRequest{path: item.Module, version: version, typed: hasVersion, fromName: spec, itemLicense: item.License}
+				}
+			} else {
+				return nil, fmt.Errorf("add: %q is not a module path with an optional @version", arg)
+			}
 		}
-		if err := module.CheckPath(path); err != nil {
-			return nil, fmt.Errorf("add: %q: %w", arg, err)
+		if slices.ContainsFunc(reqs, func(r addRequest) bool { return r.path == req.path && r.component == req.component }) {
+			return nil, fmt.Errorf("add: %s is named twice", req.displayName())
 		}
-		typed := strings.Contains(arg, "@")
-		if !typed {
-			version = "upgrade"
-		}
-		if version == "none" {
-			return nil, fmt.Errorf("add: %s@none would remove %s; add never removes a module", path, path)
-		}
-		if slices.ContainsFunc(reqs, func(r addRequest) bool { return r.path == path }) {
-			return nil, fmt.Errorf("add: %s is named twice", path)
-		}
-		reqs = append(reqs, addRequest{path: path, version: version, typed: typed})
+		reqs = append(reqs, req)
 	}
 	return reqs, nil
 }
@@ -76,6 +167,13 @@ func addModules(ctx context.Context, o addOptions, args []string, out io.Writer,
 	reqs, err := parseAddRequests(args)
 	if err != nil {
 		return err
+	}
+	hasComp := slices.ContainsFunc(reqs, func(r addRequest) bool { return r.component != "" })
+	if hasComp {
+		return addCopyComponents(ctx, o, reqs, out, ask)
+	}
+	if o.dir != "" || o.diff || o.skipTests {
+		return errors.New("add: -dir, -diff and -tests=false apply only when copying a component")
 	}
 	// An interrupt kills the go commands of planning, whose errors would say only that they were killed.
 	planning := func(err error) error {
@@ -155,10 +253,13 @@ func askToApply(ctx context.Context) (bool, error) {
 // addModule is the module nsgo add plans in, and how its go commands run.
 type addModule struct {
 	dir string // the module's root, which holds go.mod
+	cwd string // working directory where nsgo add was invoked
 	// goCmd is the go command of the toolchain the module selects, which runs with GOTOOLCHAIN=local, so planning downloads and runs no other toolchain.
 	goCmd string
 	// env is every go command's environment: the user's, with GOWORK=off, GOTOOLCHAIN=local, the toolchain's GOROOT and GOPROXY up to its first direct, which becomes off, so only modules GOPRIVATE or GONOPROXY marks are fetched from their own hosts.
 	env []string
+	// listEnv is env without forcing GOWORK=off when the module is under a go.work, so read-only overlay commands run in the workspace.
+	listEnv []string
 	// workspace is the go.work the module is under, which planning leaves out, as GOWORK=off go get does.
 	workspace string
 	// sumDB, noSumDB and noProxy are GOSUMDB, GONOSUMDB and GONOPROXY, the last two GOPRIVATE when unset.
@@ -167,6 +268,10 @@ type addModule struct {
 
 // findAddModule finds the module holding the working directory, its toolchain's go command, and the settings planning keeps.
 func findAddModule(ctx context.Context) (*addModule, error) {
+	cwd, err := os.Getwd()
+	if err != nil {
+		return nil, fmt.Errorf("add: %w", err)
+	}
 	// The one go command without GOWORK=off, which reports where the module and its workspace are and, with the local toolchain, switches to none a go.work names.
 	found, err := goEnvValues(ctx, "go", ".", append(os.Environ(), "GOTOOLCHAIN=local"), "GOMOD", "GOWORK")
 	if err != nil {
@@ -175,7 +280,7 @@ func findAddModule(ctx context.Context) (*addModule, error) {
 	if found["GOMOD"] == "" || found["GOMOD"] == os.DevNull {
 		return nil, fmt.Errorf("add: not in a module: run %s add in the module that takes the library", nsgoCommand())
 	}
-	m := &addModule{dir: filepath.Dir(found["GOMOD"])}
+	m := &addModule{dir: filepath.Dir(found["GOMOD"]), cwd: cwd}
 	if w := found["GOWORK"]; w != "off" {
 		m.workspace = w
 	}
@@ -193,7 +298,13 @@ func findAddModule(ctx context.Context) (*addModule, error) {
 		return nil, fmt.Errorf("add: the module's toolchain has no go command: %w", err)
 	}
 	// GOROOT is the toolchain's own, as the go command sets it for a toolchain it switches to: a GOROOT the user exported, such as another toolchain's, would have this go command read that tree's standard library.
-	m.env = append(alone, "GOTOOLCHAIN=local", "GOROOT="+vars["GOROOT"], "GOPROXY="+initModuleProxy(vars["GOPROXY"]))
+	common := []string{"GOTOOLCHAIN=local", "GOROOT=" + vars["GOROOT"], "GOPROXY=" + initModuleProxy(vars["GOPROXY"])}
+	m.env = append(alone, common...)
+	if m.workspace != "" {
+		m.listEnv = append(os.Environ(), common...)
+	} else {
+		m.listEnv = m.env
+	}
 	m.sumDB, m.noSumDB, m.noProxy = vars["GOSUMDB"], vars["GONOSUMDB"], vars["GONOPROXY"]
 	return m, nil
 }
